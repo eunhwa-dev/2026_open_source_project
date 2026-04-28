@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1120" viewBox="0 0 1700 1120">
+  <rect width="1700" height="1120" fill="#f8fafc"/>
+  <text x="850" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="28" font-weight="bold" fill="#111827">Sequence Diagram</text>
+
+  <defs>
+    <style>
+      .actor { fill:#ffffff; stroke:#334155; stroke-width:2.2; rx:10; }
+      .title { font: bold 18px Arial, sans-serif; fill:#0f172a; }
+      .txt { font: 15px Arial, sans-serif; fill:#1f2937; }
+      .life { stroke:#94a3b8; stroke-width:2; stroke-dasharray:8 6; }
+      .msg { stroke:#1d4ed8; stroke-width:2.2; marker-end:url(#arrow); }
+      .ret { stroke:#64748b; stroke-width:2; stroke-dasharray:7 5; marker-end:url(#arrowGray); }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#1d4ed8"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+      <polygon points="0 0, 10 3, 0 6" fill="#64748b"/>
+    </marker>
+  </defs>
+
+  <rect class="actor" x="70" y="80" width="140" height="50"/>
+  <text class="title" x="140" y="112" text-anchor="middle">User</text>
+  <rect class="actor" x="310" y="80" width="190" height="50"/>
+  <text class="title" x="405" y="112" text-anchor="middle">React Frontend</text>
+  <rect class="actor" x="620" y="80" width="200" height="50"/>
+  <text class="title" x="720" y="112" text-anchor="middle">Express Backend</text>
+  <rect class="actor" x="940" y="80" width="140" height="50"/>
+  <text class="title" x="1010" y="112" text-anchor="middle">DB</text>
+  <rect class="actor" x="1170" y="80" width="180" height="50"/>
+  <text class="title" x="1260" y="112" text-anchor="middle">Spotify API</text>
+  <rect class="actor" x="1410" y="80" width="190" height="50"/>
+  <text class="title" x="1505" y="112" text-anchor="middle">Genre Playlist Service</text>
+
+  <line class="life" x1="140" y1="130" x2="140" y2="1040"/>
+  <line class="life" x1="405" y1="130" x2="405" y2="1040"/>
+  <line class="life" x1="720" y1="130" x2="720" y2="1040"/>
+  <line class="life" x1="1010" y1="130" x2="1010" y2="1040"/>
+  <line class="life" x1="1260" y1="130" x2="1260" y2="1040"/>
+  <line class="life" x1="1505" y1="130" x2="1505" y2="1040"/>
+
+  <line class="msg" x1="140" y1="180" x2="405" y2="180"/>
+  <text class="txt" x="250" y="170">1. Login with Google</text>
+
+  <line class="msg" x1="405" y1="225" x2="720" y2="225"/>
+  <text class="txt" x="525" y="215">2. Send auth/profile data</text>
+
+  <line class="msg" x1="720" y1="270" x2="1010" y2="270"/>
+  <text class="txt" x="835" y="260">3. Save user/profile</text>
+
+  <line class="ret" x1="1010" y1="310" x2="720" y2="310"/>
+  <text class="txt" x="840" y="302">4. User saved</text>
+
+  <line class="ret" x1="720" y1="350" x2="405" y2="350"/>
+  <text class="txt" x="530" y="342">5. Login success</text>
+
+  <line class="msg" x1="140" y1="420" x2="405" y2="420"/>
+  <text class="txt" x="255" y="410">6. Search track</text>
+
+  <line class="msg" x1="405" y1="460" x2="720" y2="460"/>
+  <text class="txt" x="530" y="450">7. Search request</text>
+
+  <line class="msg" x1="720" y1="500" x2="1260" y2="500"/>
+  <text class="txt" x="930" y="490">8. Search for Item</text>
+
+  <line class="ret" x1="1260" y1="540" x2="720" y2="540"/>
+  <text class="txt" x="945" y="532">9. Track results</text>
+
+  <line class="ret" x1="720" y1="580" x2="405" y2="580"/>
+  <text class="txt" x="530" y="572">10. Show results</text>
+
+  <line class="msg" x1="140" y1="640" x2="405" y2="640"/>
+  <text class="txt" x="260" y="630">11. Click Like</text>
+
+  <line class="msg" x1="405" y1="680" x2="720" y2="680"/>
+  <text class="txt" x="520" y="670">12. Save liked track request</text>
+
+  <line class="msg" x1="720" y1="720" x2="1010" y2="720"/>
+  <text class="txt" x="825" y="710">13. Insert LikedTrack</text>
+
+  <line class="msg" x1="720" y1="760" x2="1010" y2="760"/>
+  <text class="txt" x="790" y="750">14. Add to 'Liked Songs' playlist</text>
+
+  <line class="msg" x1="720" y1="800" x2="1260" y2="800"/>
+  <text class="txt" x="930" y="790">15. Get Artist / Genres</text>
+
+  <line class="ret" x1="1260" y1="840" x2="720" y2="840"/>
+  <text class="txt" x="950" y="832">16. genres[]</text>
+
+  <line class="msg" x1="720" y1="880" x2="1505" y2="880"/>
+  <text class="txt" x="1030" y="870">17. Create or update auto genre playlists</text>
+
+  <line class="msg" x1="1505" y1="920" x2="1010" y2="920"/>
+  <text class="txt" x="1210" y="910">18. Save playlist-track mappings</text>
+
+  <line class="ret" x1="1505" y1="960" x2="405" y2="960"/>
+  <text class="txt" x="900" y="952">19. Return updated liked songs and genre playlists</text>
+
+  <line class="msg" x1="140" y1="1000" x2="405" y2="1000"/>
+  <text class="txt" x="240" y="990">20. Create manual playlist / add track</text>
+
+  <line class="msg" x1="405" y1="1025" x2="720" y2="1025"/>
+  <text class="txt" x="505" y="1015">21. Playlist create/add API</text>
+
+  <line class="msg" x1="720" y1="1045" x2="1010" y2="1045"/>
+  <text class="txt" x="810" y="1035">22. Save manual playlist or PlaylistTrack</text>
+</svg>
