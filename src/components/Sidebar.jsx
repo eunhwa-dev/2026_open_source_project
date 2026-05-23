@@ -14,7 +14,8 @@ function Sidebar() {
     <div style={{
       width: '200px', background: '#000', padding: '16px 12px',
       display: 'flex', flexDirection: 'column', gap: '2px',
-      borderRight: '0.5px solid #222', minHeight: '100%', overflowY: 'auto'
+      borderRight: '0.5px solid #222', height: '100%',
+      overflowY: 'auto'
     }}>
       <div style={{ fontSize: '10px', color: '#555', padding: '8px 10px 8px', letterSpacing: '1px' }}>
         MENU
