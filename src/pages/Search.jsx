@@ -1,126 +1,172 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
+
+const API_BASE_URL = 'http://localhost:4000'
+const TEST_USER_ID = 'test-user'
 
 function Search() {
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState('전체')
   const [results, setResults] = useState([])
-  const [searched, setSearched] = useState(false)
+  const [playlists, setPlaylists] = useState([])
+  const [status, setStatus] = useState('')
+  const [loading, setLoading] = useState(false)
   const [searchParams] = useSearchParams()
-
-  const filters = ['전체', '곡', '아티스트', '앨범']
-
-  const mockData = [
-    { id: 1, title: "Dynamite", artist: "BTS", album: "Dynamite", duration: "3:19", type: '곡' },
-    { id: 2, title: "Blinding Lights", artist: "The Weeknd", album: "After Hours", duration: "3:20", type: '곡' },
-    { id: 3, title: "Shape of You", artist: "Ed Sheeran", album: "÷", duration: "3:53", type: '곡' },
-    { id: 4, title: "Ditto", artist: "NewJeans", album: "OMG", duration: "3:05", type: '곡' },
-    { id: 5, title: "Love Story", artist: "Taylor Swift", album: "Fearless", duration: "3:55", type: '곡' },
-  ]
 
   useEffect(() => {
     const q = searchParams.get('q')
     if (q) {
       setQuery(q)
-      const filtered = mockData.filter(s =>
-        s.title.toLowerCase().includes(q.toLowerCase()) ||
-        s.artist.toLowerCase().includes(q.toLowerCase())
-      )
-      setResults(filtered)
-      setSearched(true)
+      searchTracks(q)
     }
   }, [searchParams])
 
-  const handleSearch = () => {
-    if (!query.trim()) return
-    const filtered = mockData.filter(s =>
-      s.title.toLowerCase().includes(query.toLowerCase()) ||
-      s.artist.toLowerCase().includes(query.toLowerCase())
-    )
-    setResults(filtered)
-    setSearched(true)
+  const searchTracks = async (keyword = query) => {
+    if (!keyword.trim()) return
+
+    setLoading(true)
+    setStatus('Searching Spotify through backend...')
+
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/spotify/search?q=${encodeURIComponent(keyword)}&type=track&limit=10`
+      )
+
+      if (!response.ok) {
+        throw new Error(`Search failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setResults(data.tracks || [])
+      setStatus(`Found ${(data.tracks || []).length} tracks from backend.`)
+    } catch (error) {
+      setStatus(error.message)
+      setResults([])
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const filtered = filter === '전체' ? results : results.filter(r => r.type === filter)
+  const likeTrack = async (track) => {
+    setStatus(`Saving "${track.title}" and syncing genre playlists...`)
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/users/${TEST_USER_ID}/likes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(track)
+      })
+
+      if (!response.ok) {
+        throw new Error(`Like failed: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setPlaylists(data.syncedPlaylists || [])
+      setStatus(`Saved. Synced ${(data.syncedPlaylists || []).length} genre playlists.`)
+    } catch (error) {
+      setStatus(error.message)
+    }
+  }
 
   return (
     <div style={{ color: '#fff', padding: '24px' }}>
       <div style={{ fontSize: '11px', color: '#1DB954', letterSpacing: '1px', marginBottom: '6px' }}>
-        SEARCH
+        BACKEND INTEGRATION CHECK
       </div>
-      <div style={{ fontSize: '22px', fontWeight: '500', marginBottom: '20px' }}>음악 검색</div>
+      <div style={{ fontSize: '22px', fontWeight: '500', marginBottom: '20px' }}>
+        Spotify Search
+      </div>
 
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
         <input
           value={query}
-          onChange={e => setQuery(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && handleSearch()}
-          placeholder="곡, 아티스트, 앨범 검색..."
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={(event) => event.key === 'Enter' && searchTracks()}
+          placeholder="Search tracks..."
           style={{
-            flex: 1, background: '#1a1a1a', border: '0.5px solid #444',
-            borderRadius: '8px', padding: '10px 16px', color: '#fff',
-            fontSize: '14px', outline: 'none'
+            flex: 1,
+            background: '#1a1a1a',
+            border: '0.5px solid #444',
+            borderRadius: '8px',
+            padding: '10px 16px',
+            color: '#fff',
+            fontSize: '14px',
+            outline: 'none'
           }}
         />
-        <button onClick={handleSearch} style={{
-          background: '#1DB954', border: 'none', borderRadius: '8px',
-          color: '#000', fontSize: '13px', fontWeight: '500',
-          padding: '10px 20px', cursor: 'pointer'
-        }}>검색</button>
-      </div>
-
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
-        {filters.map(f => (
-          <button key={f} onClick={() => setFilter(f)} style={{
-            padding: '6px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-            background: filter === f ? '#1DB954' : '#222',
-            color: filter === f ? '#000' : '#aaa',
-            fontSize: '12px', fontWeight: filter === f ? '500' : '400'
-          }}>{f}</button>
-        ))}
-      </div>
-
-      {searched && filtered.length === 0 && (
-        <div style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>
-          검색 결과가 없어요 😢
-        </div>
-      )}
-
-      {filtered.map((song, i) => (
-        <div key={song.id} style={{
-          display: 'grid', gridTemplateColumns: '32px 1fr 200px 80px 80px',
-          gap: '8px', padding: '10px 12px', borderRadius: '8px',
-          alignItems: 'center', cursor: 'pointer', marginBottom: '4px'
-        }}
-          onMouseEnter={e => e.currentTarget.style.background = '#1a1a1a'}
-          onMouseLeave={e => e.currentTarget.style.background = 'none'}
+        <button
+          onClick={() => searchTracks()}
+          disabled={loading}
+          style={{
+            background: '#1DB954',
+            border: 'none',
+            borderRadius: '8px',
+            color: '#000',
+            fontSize: '13px',
+            fontWeight: '500',
+            padding: '10px 20px',
+            cursor: 'pointer'
+          }}
         >
-          <span style={{ fontSize: '13px', color: '#aaa' }}>{i + 1}</span>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '40px', height: '40px', background: '#222', borderRadius: '4px',
-              flexShrink: 0, display: 'flex', alignItems: 'center',
-              justifyContent: 'center', fontSize: '16px', color: '#1DB954'
-            }}>♪</div>
-            <div>
-              <div style={{ fontSize: '13px', color: '#fff' }}>{song.title}</div>
-              <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artist}</div>
-            </div>
+          Search
+        </button>
+      </div>
+
+      <div style={{ minHeight: '24px', color: '#aaa', fontSize: '13px', marginBottom: '16px' }}>
+        {status}
+      </div>
+
+      {results.map((song, index) => (
+        <div
+          key={song.spotifyTrackId}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '32px 48px 1fr 120px',
+            gap: '12px',
+            padding: '10px 12px',
+            borderRadius: '8px',
+            alignItems: 'center',
+            marginBottom: '4px',
+            background: '#111'
+          }}
+        >
+          <span style={{ fontSize: '13px', color: '#aaa' }}>{index + 1}</span>
+          <img
+            src={song.albumImageUrl || '/favicon.svg'}
+            alt=""
+            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }}
+          />
+          <div>
+            <div style={{ fontSize: '13px', color: '#fff' }}>{song.title}</div>
+            <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artistName}</div>
           </div>
-          <span style={{ fontSize: '12px', color: '#aaa' }}>{song.album}</span>
-          <span style={{ fontSize: '12px', color: '#aaa' }}>{song.duration}</span>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button style={{
-              background: 'none', border: '0.5px solid #555', borderRadius: '20px',
-              color: '#aaa', fontSize: '11px', padding: '4px 10px', cursor: 'pointer'
-            }}>♥ 좋아요</button>
-            <button style={{
-              background: 'none', border: '0.5px solid #555', borderRadius: '20px',
-              color: '#aaa', fontSize: '11px', padding: '4px 10px', cursor: 'pointer'
-            }}>🔗</button>
-          </div>
+          <button
+            onClick={() => likeTrack(song)}
+            style={{
+              background: 'none',
+              border: '0.5px solid #555',
+              borderRadius: '20px',
+              color: '#ddd',
+              fontSize: '12px',
+              padding: '6px 12px',
+              cursor: 'pointer'
+            }}
+          >
+            Like
+          </button>
         </div>
       ))}
+
+      {playlists.length > 0 && (
+        <div style={{ marginTop: '24px' }}>
+          <div style={{ fontSize: '16px', marginBottom: '10px' }}>Synced Genre Playlists</div>
+          {playlists.map((playlist) => (
+            <div key={playlist.id} style={{ color: '#aaa', fontSize: '13px', marginBottom: '6px' }}>
+              {playlist.name}: {playlist.tracks.length} track(s)
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
