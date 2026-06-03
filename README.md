@@ -1,16 +1,10 @@
-# React + Vite
+# Open Source 2026 Team Project
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Spotify 음악 추천/플레이리스트 관리 서비스 프로젝트입니다.
 
-Currently, two official plugins are available:
+## 실행 구조
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 프론트엔드: React + Vite
+- 백엔드: Node.js + Express
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+프론트엔드와 백엔드를 함께 확인할 때는 프론트 개발 서버와 백엔드 서버를 각각 실행합니다.
