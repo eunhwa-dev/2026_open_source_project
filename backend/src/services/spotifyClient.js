@@ -41,6 +41,11 @@ class SpotifyClient {
     return mapArtist(artist);
   }
 
+  async getTrack(trackId) {
+    const track = await this.request(`/tracks/${encodeURIComponent(trackId)}`);
+    return mapTrack(track);
+  }
+
   async getArtists(artistIds) {
     const uniqueIds = [...new Set(artistIds)].filter(Boolean);
     if (uniqueIds.length === 0) {
