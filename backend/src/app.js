@@ -4,6 +4,7 @@ const express = require("express");
 const { createAuthRoutes } = require("./routes/authRoutes");
 const { createSpotifyRoutes } = require("./routes/spotifyRoutes");
 const { createPlaylistRoutes } = require("./routes/playlistRoutes");
+const { createPlayerRoutes } = require("./routes/playerRoutes");
 const { createUserRoutes } = require("./routes/userRoutes");
 const { SpotifyClient } = require("./services/spotifyClient");
 const { GenrePlaylistService } = require("./services/genrePlaylistService");
@@ -30,6 +31,7 @@ function createApp(dependencies = {}) {
   app.use("/api/spotify", createSpotifyRoutes({ spotifyClient }));
   app.use("/api/auth", createAuthRoutes({ repository, googleAuthService }));
   app.use("/api/users/:userId", createUserRoutes({ repository }));
+  app.use("/api/users/:userId/player", createPlayerRoutes({ repository }));
   app.use(
     "/api/users/:userId",
     createPlaylistRoutes({ repository, genrePlaylistService })

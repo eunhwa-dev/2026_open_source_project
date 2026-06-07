@@ -5,6 +5,7 @@ class InMemoryMusicRepository {
     this.likesByUser = new Map();
     this.genrePlaylistsByUser = new Map();
     this.manualPlaylistsByUser = new Map();
+    this.playerStatesByUser = new Map();
   }
 
   async upsertUserFromGoogleProfile(profile) {
@@ -237,6 +238,100 @@ class InMemoryMusicRepository {
         .slice(0, 5)
     };
   }
+
+  async getPlayerState(userId) {
+    return clone(this.getOrCreatePlayerState(userId));
+  }
+
+  async playTrack({ userId, track, positionMs = 0 }) {
+    const state = this.getOrCreatePlayerState(userId);
+    const now = new Date().toISOString();
+
+    if (track) {
+      state.currentTrack = clone(track);
+      state.positionMs = sanitizePosition(positionMs);
+    }
+
+    state.isPlaying = true;
+    state.updatedAt = now;
+    return clone(state);
+  }
+
+  async pausePlayer(userId) {
+    const state = this.getOrCreatePlayerState(userId);
+    state.isPlaying = false;
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  async stopPlayer(userId) {
+    const state = this.getOrCreatePlayerState(userId);
+    state.isPlaying = false;
+    state.positionMs = 0;
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  async seekPlayer({ userId, positionMs }) {
+    const state = this.getOrCreatePlayerState(userId);
+    state.positionMs = sanitizePosition(positionMs);
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  async updatePlayerSettings(userId, updates) {
+    const state = this.getOrCreatePlayerState(userId);
+
+    if (updates.volumePercent !== undefined) {
+      state.volumePercent = sanitizeVolume(updates.volumePercent);
+    }
+
+    if (updates.repeatMode !== undefined) {
+      state.repeatMode = normalizeRepeatMode(updates.repeatMode);
+    }
+
+    if (updates.shuffle !== undefined) {
+      state.shuffle = Boolean(updates.shuffle);
+    }
+
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  async enqueueTrack({ userId, track }) {
+    const state = this.getOrCreatePlayerState(userId);
+    state.queue.push({
+      ...track,
+      queuedAt: new Date().toISOString()
+    });
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  async clearPlayerQueue(userId) {
+    const state = this.getOrCreatePlayerState(userId);
+    state.queue = [];
+    state.updatedAt = new Date().toISOString();
+    return clone(state);
+  }
+
+  getOrCreatePlayerState(userId) {
+    if (!this.playerStatesByUser.has(userId)) {
+      this.playerStatesByUser.set(userId, {
+        userId,
+        currentTrack: null,
+        isPlaying: false,
+        positionMs: 0,
+        volumePercent: 70,
+        repeatMode: "off",
+        shuffle: false,
+        queue: [],
+        updatedAt: null
+      });
+    }
+
+    return this.playerStatesByUser.get(userId);
+  }
 }
 
 function getOrCreateMap(parentMap, key) {
@@ -297,6 +392,25 @@ function removeTrackFromPlaylists(playlists, spotifyTrackId) {
       playlist.updatedAt = new Date().toISOString();
     }
   }
+}
+
+function sanitizePosition(positionMs) {
+  const position = Number(positionMs);
+  return Number.isFinite(position) && position > 0 ? Math.floor(position) : 0;
+}
+
+function sanitizeVolume(volumePercent) {
+  const volume = Number(volumePercent);
+  if (!Number.isFinite(volume)) {
+    return 70;
+  }
+
+  return Math.min(Math.max(Math.round(volume), 0), 100);
+}
+
+function normalizeRepeatMode(repeatMode) {
+  const mode = String(repeatMode || "off").toLowerCase();
+  return ["off", "track", "context"].includes(mode) ? mode : "off";
 }
 
 function clone(value) {

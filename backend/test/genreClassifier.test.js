@@ -4,6 +4,7 @@ const test = require("node:test");
 const {
   FALLBACK_GENRE,
   classifyTrackByArtistGenres,
+  inferGenresFromTrackAndArtist,
   normalizeGenres
 } = require("../src/services/genreClassifier");
 
@@ -26,4 +27,23 @@ test("classifies one track into every artist genre", () => {
 
   assert.deepEqual(result.genres, ["pop", "r&b"]);
   assert.equal(result.artistId, "artist-1");
+});
+
+test("infers genres when Spotify artist genres are empty", () => {
+  const result = classifyTrackByArtistGenres(
+    { spotifyTrackId: "track-1", title: "Dynamite", artistName: "BTS" },
+    { id: "artist-1", name: "BTS", genres: [] }
+  );
+
+  assert.deepEqual(result.genres, ["k-pop", "pop"]);
+});
+
+test("keeps fallback genre when no Spotify or inferred genre exists", () => {
+  assert.deepEqual(
+    inferGenresFromTrackAndArtist(
+      { spotifyTrackId: "track-1", title: "Unknown Song" },
+      { id: "artist-1", name: "Unknown Artist", genres: [] }
+    ),
+    [FALLBACK_GENRE]
+  );
 });
