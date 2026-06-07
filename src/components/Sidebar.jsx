@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import useMusicStore from '../store/musicStore'
 
 function Sidebar() {
   const location = useLocation()
@@ -7,7 +8,13 @@ function Sidebar() {
   const [autoOpen, setAutoOpen] = useState(false)
   const [manualOpen, setManualOpen] = useState(false)
 
-  const autoPlaylists = ['K-Pop', 'Indie Pop', 'Jazz', 'R&B', 'Synthpop', '기타']
+  const { playlists, fetchPlaylists } = useMusicStore()
+
+  useEffect(() => {
+    fetchPlaylists()
+  }, [])
+
+  const autoPlaylists = playlists.filter(p => p.type === 'AUTO_GENRE')
   const manualPlaylists = ['드라이브 할 때', '공부할 때', '내가 만든 플레이리스트 1']
 
   return (
@@ -55,19 +62,23 @@ function Sidebar() {
 
           {autoOpen && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', paddingLeft: '16px' }}>
-              {autoPlaylists.map(name => (
-                <Link
-                  key={name}
-                  to={`/playlist/auto/${encodeURIComponent(name)}`}
-                  style={{
-                    fontSize: '11px', textDecoration: 'none', color: '#777',
-                    padding: '5px 10px', borderRadius: '6px',
-                    borderLeft: '1px solid #222', display: 'block'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.color = '#fff'}
-                  onMouseLeave={e => e.currentTarget.style.color = '#777'}
-                >{name}</Link>
-              ))}
+              {autoPlaylists.length === 0 ? (
+                <div style={{ fontSize: '11px', color: '#555', padding: '5px 10px' }}>없음</div>
+              ) : (
+                autoPlaylists.map(playlist => (
+                  <Link
+                    key={playlist.id}
+                    to={`/playlist/auto/${encodeURIComponent(playlist.name)}`}
+                    style={{
+                      fontSize: '11px', textDecoration: 'none', color: '#777',
+                      padding: '5px 10px', borderRadius: '6px',
+                      borderLeft: '1px solid #222', display: 'block'
+                    }}
+                    onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                    onMouseLeave={e => e.currentTarget.style.color = '#777'}
+                  >{playlist.name}</Link>
+                ))
+              )}
             </div>
           )}
 

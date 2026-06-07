@@ -1,33 +1,31 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import useMusicStore from '../store/musicStore'
 
 function PlaylistDetail() {
   const { type, name } = useParams()
   const isAuto = type === 'auto'
+  const decodedName = decodeURIComponent(name)
 
-  const [songs, setSongs] = useState([
-    { id: 1, title: "Dynamite", artist: "BTS", album: "Dynamite", duration: "3:19" },
-    { id: 2, title: "GODS", artist: "NewJeans", album: "GODS", duration: "3:05" },
-    { id: 3, title: "Butter", artist: "BTS", album: "Butter", duration: "2:44" },
-    { id: 4, title: "Ditto", artist: "NewJeans", album: "OMG", duration: "3:05" },
-  ])
-
+  const { playlists, fetchPlaylists } = useMusicStore()
   const [sortBy, setSortBy] = useState('default')
   const [newSong, setNewSong] = useState('')
 
+  useEffect(() => {
+    fetchPlaylists()
+  }, [])
+
+  const playlist = playlists.find(p => p.name === decodedName)
+  const songs = playlist?.tracks || []
+
   const sorted = [...songs].sort((a, b) => {
     if (sortBy === 'title') return a.title.localeCompare(b.title)
-    if (sortBy === 'artist') return a.artist.localeCompare(b.artist)
+    if (sortBy === 'artist') return (a.artistName || '').localeCompare(b.artistName || '')
     return 0
   })
 
-  const deleteSong = (id) => setSongs(songs.filter(s => s.id !== id))
-
   const addSong = () => {
     if (!newSong.trim()) return
-    setSongs([...songs, {
-      id: Date.now(), title: newSong, artist: '직접 추가', album: '-', duration: '-'
-    }])
     setNewSong('')
   }
 
@@ -53,7 +51,7 @@ function PlaylistDetail() {
             {isAuto ? '자동 생성' : '수동 생성'}
           </div>
           <div style={{ fontSize: '22px', fontWeight: '500', marginBottom: '4px' }}>
-            {decodeURIComponent(name)}
+            {decodedName}
           </div>
           <div style={{ fontSize: '12px', color: '#aaa' }}>{songs.length}곡</div>
         </div>
@@ -100,16 +98,22 @@ function PlaylistDetail() {
       )}
 
       <div style={{
-        display: 'grid', gridTemplateColumns: '32px 1fr 1fr 80px 40px',
+        display: 'grid', gridTemplateColumns: '32px 1fr 80px',
         gap: '8px', padding: '8px 12px', borderBottom: '0.5px solid #333',
         fontSize: '11px', color: '#aaa', marginBottom: '4px'
       }}>
-        <span>#</span><span>제목</span><span>앨범</span><span>시간</span><span></span>
+        <span>#</span><span>제목</span><span>시간</span>
       </div>
 
+      {sorted.length === 0 && (
+        <div style={{ color: '#aaa', fontSize: '14px', textAlign: 'center', marginTop: '40px' }}>
+          곡이 없어요 😢
+        </div>
+      )}
+
       {sorted.map((song, i) => (
-        <div key={song.id} style={{
-          display: 'grid', gridTemplateColumns: '32px 1fr 1fr 80px 40px',
+        <div key={song.spotifyTrackId || i} style={{
+          display: 'grid', gridTemplateColumns: '32px 1fr 80px',
           gap: '8px', padding: '10px 12px', borderRadius: '6px',
           alignItems: 'center', cursor: 'pointer'
         }}
@@ -118,26 +122,23 @@ function PlaylistDetail() {
         >
           <span style={{ fontSize: '13px', color: '#aaa' }}>{i + 1}</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '36px', height: '36px', flexShrink: 0, borderRadius: '4px',
-              background: isAuto ? '#0f3d20' : '#2d1f6e',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '14px', color: isAuto ? '#1DB954' : '#a78bfa'
-            }}>♪</div>
+            {song.albumImageUrl ? (
+              <img src={song.albumImageUrl} alt="앨범"
+                style={{ width: '36px', height: '36px', borderRadius: '4px', flexShrink: 0 }} />
+            ) : (
+              <div style={{
+                width: '36px', height: '36px', flexShrink: 0, borderRadius: '4px',
+                background: isAuto ? '#0f3d20' : '#2d1f6e',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '14px', color: isAuto ? '#1DB954' : '#a78bfa'
+              }}>♪</div>
+            )}
             <div>
               <div style={{ fontSize: '13px', color: '#fff' }}>{song.title}</div>
-              <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artist}</div>
+              <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artistName || '-'}</div>
             </div>
           </div>
-          <span style={{ fontSize: '12px', color: '#aaa' }}>{song.album}</span>
-          <span style={{ fontSize: '12px', color: '#aaa' }}>{song.duration}</span>
-          <button onClick={() => deleteSong(song.id)} style={{
-            background: 'none', border: 'none', color: '#555',
-            fontSize: '14px', cursor: 'pointer'
-          }}
-            onMouseEnter={e => e.currentTarget.style.color = '#ff4444'}
-            onMouseLeave={e => e.currentTarget.style.color = '#555'}
-          >✕</button>
+          <span style={{ fontSize: '12px', color: '#aaa' }}>{song.duration || '-'}</span>
         </div>
       ))}
     </div>
