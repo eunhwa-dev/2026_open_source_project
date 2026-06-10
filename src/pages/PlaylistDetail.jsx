@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import axios from 'axios'
 import useMusicStore from '../store/musicStore'
+
+const BASE_URL = 'http://localhost:4000'
 
 function PlaylistDetail() {
   const { type, name } = useParams()
@@ -9,13 +12,16 @@ function PlaylistDetail() {
 
   const { playlists, fetchPlaylists } = useMusicStore()
   const [sortBy, setSortBy] = useState('default')
-  const [newSong, setNewSong] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchResults, setSearchResults] = useState([])
+  const [searching, setSearching] = useState(false)
 
   useEffect(() => {
     fetchPlaylists()
   }, [])
 
   const playlist = playlists.find(p => p.name === decodedName)
+  const playlistId = playlist?.id
   const songs = playlist?.tracks || []
 
   const sorted = [...songs].sort((a, b) => {
@@ -24,9 +30,48 @@ function PlaylistDetail() {
     return 0
   })
 
-  const addSong = () => {
-    if (!newSong.trim()) return
-    setNewSong('')
+  const handleSearch = async () => {
+    if (!searchQuery.trim()) return
+    setSearching(true)
+    try {
+      const res = await axios.get(`${BASE_URL}/api/spotify/search`, {
+        params: { q: searchQuery }
+      })
+      const data = Array.isArray(res.data) ? res.data : res.data.tracks || []
+      setSearchResults(data)
+    } catch (err) {
+      console.error('검색 실패:', err)
+    } finally {
+      setSearching(false)
+    }
+  }
+
+  const addTrack = async (song) => {
+    if (!playlistId) return
+    try {
+      await axios.post(`${BASE_URL}/api/users/me/playlists/manual/${playlistId}/tracks`, {
+        spotifyTrackId: song.spotifyTrackId,
+        title: song.title,
+        artistId: song.artistId,
+        artistName: song.artistName,
+        albumImageUrl: song.albumImageUrl
+      })
+      await fetchPlaylists()
+      setSearchResults([])
+      setSearchQuery('')
+    } catch (err) {
+      console.error('곡 추가 실패:', err)
+    }
+  }
+
+  const deleteTrack = async (spotifyTrackId) => {
+    if (!playlistId) return
+    try {
+      await axios.delete(`${BASE_URL}/api/users/me/playlists/manual/${playlistId}/tracks/${spotifyTrackId}`)
+      await fetchPlaylists()
+    } catch (err) {
+      console.error('곡 삭제 실패:', err)
+    }
   }
 
   return (
@@ -63,10 +108,6 @@ function PlaylistDetail() {
           background: isAuto ? '#1DB954' : '#a78bfa',
           border: 'none', color: '#fff', fontSize: '16px', cursor: 'pointer'
         }}>▶</button>
-        <button style={{
-          background: 'none', border: '0.5px solid #555', borderRadius: '20px',
-          color: '#fff', fontSize: '12px', padding: '6px 14px', cursor: 'pointer'
-        }}>🔗 외부 링크</button>
         <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{
           background: '#222', border: '0.5px solid #444', borderRadius: '20px',
           color: '#fff', fontSize: '12px', padding: '6px 14px', cursor: 'pointer', outline: 'none'
@@ -78,31 +119,73 @@ function PlaylistDetail() {
       </div>
 
       {!isAuto && (
-        <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-          <input
-            value={newSong}
-            onChange={e => setNewSong(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && addSong()}
-            placeholder="곡 제목 입력 후 Enter"
-            style={{
-              flex: 1, background: '#1a1a1a', border: '0.5px solid #444',
-              borderRadius: '8px', padding: '8px 14px', color: '#fff',
-              fontSize: '13px', outline: 'none'
-            }}
-          />
-          <button onClick={addSong} style={{
-            background: '#a78bfa', border: 'none', borderRadius: '8px',
-            color: '#fff', fontSize: '12px', padding: '8px 16px', cursor: 'pointer'
-          }}>+ 추가</button>
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+            <input
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSearch()}
+              placeholder="곡 제목 입력 후 Enter"
+              style={{
+                flex: 1, background: '#1a1a1a', border: '0.5px solid #444',
+                borderRadius: '8px', padding: '8px 14px', color: '#fff',
+                fontSize: '13px', outline: 'none'
+              }}
+            />
+            <button onClick={handleSearch} style={{
+              background: '#a78bfa', border: 'none', borderRadius: '8px',
+              color: '#fff', fontSize: '12px', padding: '8px 16px', cursor: 'pointer'
+            }}>검색</button>
+          </div>
+
+          {searching && (
+            <div style={{ color: '#aaa', fontSize: '13px', padding: '8px' }}>검색 중...</div>
+          )}
+
+          {searchResults.length > 0 && (
+            <div style={{
+              background: '#1a1a1a', borderRadius: '8px',
+              border: '0.5px solid #333', overflow: 'hidden', marginBottom: '8px'
+            }}>
+              {searchResults.map((song, i) => (
+                <div key={song.spotifyTrackId || i} style={{
+                  display: 'flex', alignItems: 'center', gap: '10px',
+                  padding: '10px 14px', borderBottom: '0.5px solid #222',
+                  cursor: 'pointer'
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#222'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  {song.albumImageUrl ? (
+                    <img src={song.albumImageUrl} alt="앨범"
+                      style={{ width: '36px', height: '36px', borderRadius: '4px', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{
+                      width: '36px', height: '36px', background: '#333', borderRadius: '4px', flexShrink: 0,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px'
+                    }}>♪</div>
+                  )}
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '13px', color: '#fff' }}>{song.title}</div>
+                    <div style={{ fontSize: '11px', color: '#aaa' }}>{song.artistName}</div>
+                  </div>
+                  <button onClick={() => addTrack(song)} style={{
+                    background: '#a78bfa', border: 'none', borderRadius: '20px',
+                    color: '#fff', fontSize: '11px', padding: '4px 12px', cursor: 'pointer'
+                  }}>+ 추가</button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
       <div style={{
-        display: 'grid', gridTemplateColumns: '32px 1fr 80px',
+        display: 'grid', gridTemplateColumns: '32px 1fr 80px 40px',
         gap: '8px', padding: '8px 12px', borderBottom: '0.5px solid #333',
         fontSize: '11px', color: '#aaa', marginBottom: '4px'
       }}>
-        <span>#</span><span>제목</span><span>시간</span>
+        <span>#</span><span>제목</span><span>시간</span><span></span>
       </div>
 
       {sorted.length === 0 && (
@@ -113,7 +196,7 @@ function PlaylistDetail() {
 
       {sorted.map((song, i) => (
         <div key={song.spotifyTrackId || i} style={{
-          display: 'grid', gridTemplateColumns: '32px 1fr 80px',
+          display: 'grid', gridTemplateColumns: '32px 1fr 80px 40px',
           gap: '8px', padding: '10px 12px', borderRadius: '6px',
           alignItems: 'center', cursor: 'pointer'
         }}
@@ -139,6 +222,15 @@ function PlaylistDetail() {
             </div>
           </div>
           <span style={{ fontSize: '12px', color: '#aaa' }}>{song.duration || '-'}</span>
+          {!isAuto && (
+            <button onClick={() => deleteTrack(song.spotifyTrackId)} style={{
+              background: 'none', border: 'none', color: '#555',
+              fontSize: '14px', cursor: 'pointer'
+            }}
+              onMouseEnter={e => e.currentTarget.style.color = '#ff4444'}
+              onMouseLeave={e => e.currentTarget.style.color = '#555'}
+            >✕</button>
+          )}
         </div>
       ))}
     </div>

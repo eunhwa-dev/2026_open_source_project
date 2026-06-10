@@ -2,6 +2,14 @@ import { useNavigate } from 'react-router-dom'
 
 function Home() {
   const navigate = useNavigate()
+  const user = JSON.parse(localStorage.getItem('listoraUser') || 'null')
+
+  const handleLogout = () => {
+    localStorage.removeItem('listoraUser')
+    localStorage.removeItem('listoraUserId')
+    navigate('/')
+    window.location.reload()
+  }
 
   const previews = [
     { name: 'K-Pop 베스트', count: 32, color: '#1DB954' },
@@ -12,7 +20,6 @@ function Home() {
 
   return (
     <div style={{ color: '#fff', padding: '24px' }}>
-
       <div style={{
         background: 'linear-gradient(135deg, #0f2d1f, #1a1035)',
         borderRadius: '16px', padding: '40px', marginBottom: '32px',
@@ -28,15 +35,27 @@ function Home() {
           Spotify 좋아요 곡을 장르별로 자동 분류하고<br />
           나만의 플레이리스트를 만들어보세요
         </div>
-        <button
-          onClick={() => navigate('/login')}
-          style={{
-            background: '#1DB954', border: 'none', borderRadius: '30px',
-            color: '#000', fontSize: '14px', fontWeight: '500',
-            padding: '12px 28px', cursor: 'pointer'
-          }}>
-          Google로 시작하기
-        </button>
+        {user ? (
+          <button
+            onClick={handleLogout}
+            style={{
+              background: '#333', border: '0.5px solid #555', borderRadius: '30px',
+              color: '#fff', fontSize: '14px', fontWeight: '500',
+              padding: '12px 28px', cursor: 'pointer'
+            }}>
+            로그아웃
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            style={{
+              background: '#1DB954', border: 'none', borderRadius: '30px',
+              color: '#000', fontSize: '14px', fontWeight: '500',
+              padding: '12px 28px', cursor: 'pointer'
+            }}>
+            Google로 시작하기
+          </button>
+        )}
       </div>
 
       <div style={{ marginBottom: '32px' }}>
@@ -86,7 +105,6 @@ function Home() {
           ))}
         </div>
       </div>
-
     </div>
   )
 }
